@@ -1,7 +1,8 @@
 {
-  "version": 8,
+  "version": 9,
   "name": "frigate",
   "nixpkgs": "nixos-unstable",
+  "icon": "frigate",
   "routes": [{ "host": "frigate", "port": 5000 }],
   "gpu": true,
   "containers": true,
@@ -61,5 +62,8 @@
   },
   "health": {
     "units": ["podman-frigate.service"]
-  }
+  },
+  "services": [
+    { "unit": "podman-frigate.service", "icon": "frigate" }
+  ]
 }
