@@ -1,0 +1,65 @@
+{
+  "version": 8,
+  "name": "frigate",
+  "nixpkgs": "nixos-unstable",
+  "routes": [{ "host": "frigate", "port": 5000 }],
+  "gpu": true,
+  "containers": true,
+  "variables": [
+    {
+      "name": "RECORDINGS_DIR",
+      "kind": "path",
+      "description": "Where Frigate keeps recordings, snapshots and clips. It grows with the cameras and the retention you set in Frigate.",
+      "required": true,
+      "mount": "/var/lib/frigate/media"
+    },
+    {
+      "name": "CAMERAS",
+      "kind": "address",
+      "description": "The cameras' IPv4 addresses. Frigate pulls their RTSP streams on port 554.",
+      "required": true
+    },
+    {
+      "name": "MQTT_HOST",
+      "kind": "address",
+      "description": "Home Assistant's MQTT broker, which Frigate sends events to on port 1883. Frigate's config can use it as {FRIGATE_MQTT_HOST}. Leave it unset to run Frigate without MQTT.",
+      "required": false
+    },
+    {
+      "name": "FRIGATE_MQTT_PASSWORD",
+      "kind": "secret",
+      "description": "Password of Frigate's MQTT user. Frigate's config reads it as {FRIGATE_MQTT_PASSWORD}.",
+      "required": false
+    },
+    {
+      "name": "GO2RTC_CLIENTS",
+      "kind": "address",
+      "description": "Devices that may pull Frigate's camera restreams (the go2rtc API on 1984 and RTSP on 8554), such as Home Assistant. Leave it unset to keep them closed.",
+      "required": false
+    }
+  ],
+  "egress": [
+    { "to": "$CAMERAS", "port": 554 },
+    { "to": "$MQTT_HOST", "port": 1883 }
+  ],
+  "ports": [
+    { "port": 1984, "from": ["$GO2RTC_CLIENTS"] },
+    { "port": 8554, "from": ["$GO2RTC_CLIENTS"] },
+    { "port": 8555, "from": ["lan"] },
+    { "port": 8555, "proto": "udp", "from": ["lan"] }
+  ],
+  "backup": {
+    "folders": [
+      {
+        "label": "Frigate settings",
+        "path": "/var/lib/frigate/config",
+        "exclude": [
+          { "pattern": "/frigate.db*", "reason": "The list of recorded events. The recordings it points to are not backed up." }
+        ]
+      }
+    ]
+  },
+  "health": {
+    "units": ["podman-frigate.service"]
+  }
+}
